@@ -1,0 +1,155 @@
+---
+// src/pages/recipes/index.astro
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import RecipeCard from '../../components/RecipeCard.astro';
+import { getRecipes } from '../../lib/fetchData';
+
+const recipes = await getRecipes();
+
+// Extract deduplicated tags from all recipes (server-side)
+const allTags: string[] = ['All', ...Array.from(
+  new Set(recipes.flatMap((r: any) => r.tags ?? []))
+).sort() as string[]];
+---
+
+<Layout title="All Recipes" description="Browse our full collection of simple, healthy, and delicious recipes.">
+  <Header slot="header-override" />
+
+  <!-- Page header -->
+  <div class="mb-8">
+    <h1 class="section-title text-3xl md:text-4xl mb-2">All Recipes</h1>
+    <p class="text-muted">
+      {recipes.length} recipe{recipes.length !== 1 ? 's' : ''} and counting — all made with 10 ingredients or less.
+    </p>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="flex flex-col sm:flex-row gap-4 mb-8">
+    <!-- Dynamic tag filter pills -->
+    <div id="tag-filter-bar" class="flex flex-wrap gap-2 flex-1" role="group" aria-label="Filter by tag">
+      {allTags.map((tag, i) => (
+        <button
+          type="button"
+          data-tag={tag.toLowerCase()}
+          class={`tag-pill-btn px-4 py-2 rounded-full text-sm font-medium border transition-all duration-150 ${
+            i === 0
+              ? 'bg-honey border-honey text-bark'
+              : 'bg-white border-gray-200 text-gray-600 hover:border-honey hover:text-bark'
+          }`}
+        >
+          {tag}
+        </button>
+      ))}
+    </div>
+
+    <!-- Search input -->
+    <div class="relative sm:w-56 shrink-0 self-start">
+      <input
+        id="recipes-search"
+        name="search"
+        type="search"
+        placeholder="Search recipes…"
+        aria-label="Search recipes"
+        class="w-full pl-9 pr-4 py-2 text-sm bg-white border border-gray-200 rounded-full
+               focus:outline-none focus:ring-2 focus:ring-honey focus:border-transparent"
+      />
+      <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+           fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="11" cy="11" r="8" stroke-width="2"/>
+        <path d="M21 21l-4.35-4.35" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Recipe grid -->
+  {recipes.length > 0 ? (
+    <div id="recipes-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      {recipes.map((recipe: any) => (
+        <div
+          class="recipe-card-wrapper"
+          data-title={recipe.title.toLowerCase()}
+          data-tags={recipe.tags?.join(',').toLowerCase() ?? ''}
+        >
+          <RecipeCard recipe={recipe} />
+        </div>
+      ))}
+    </div>
+  ) : (
+    <div class="text-center py-20">
+      <p class="text-muted text-lg">No recipes found. Check back soon!</p>
+    </div>
+  )}
+
+  <!-- Empty state (shown by JS when no results match) -->
+  <div id="no-results" class="hidden text-center py-20">
+    <p class="text-4xl mb-4">🔍</p>
+    <p class="text-muted text-lg font-medium">No recipes match your search.</p>
+    <p class="text-muted text-sm mt-1">Try a different keyword or tag!</p>
+  </div>
+
+  <Footer slot="footer" />
+</Layout>
+
+<script>
+  document.addEventListener('astro:page-load', () => {
+    const searchInput  = document.getElementById('recipes-search') as HTMLInputElement | null;
+    const tagBar       = document.getElementById('tag-filter-bar');
+    const noResults    = document.getElementById('no-results');
+    const cards        = document.querySelectorAll<HTMLElement>('.recipe-card-wrapper');
+    const tagBtns      = tagBar?.querySelectorAll<HTMLButtonElement>('.tag-pill-btn');
+
+    if (!searchInput || !tagBar || !cards.length) return;
+
+    let activeTag = 'all';
+
+    // --- Active pill styles ---
+    const ACTIVE   = ['bg-honey', 'border-honey', 'text-bark'];
+    const INACTIVE = ['bg-white', 'border-gray-200', 'text-gray-600'];
+
+    function setActiveBtn(btn: HTMLButtonElement) {
+      tagBtns?.forEach(b => {
+        b.classList.remove(...ACTIVE);
+        b.classList.add(...INACTIVE);
+      });
+      btn.classList.remove(...INACTIVE);
+      btn.classList.add(...ACTIVE);
+    }
+
+    // --- Core filter function ---
+    function applyFilters() {
+      const query = searchInput!.value.trim().toLowerCase();
+      let visibleCount = 0;
+
+      cards.forEach(card => {
+        const title = card.dataset.title ?? '';
+        const tags  = card.dataset.tags  ?? '';
+
+        const matchesTag    = activeTag === 'all' || tags.split(',').includes(activeTag);
+        const matchesSearch = !query || title.includes(query) || tags.includes(query);
+
+        const visible = matchesTag && matchesSearch;
+        card.style.display = visible ? '' : 'none';
+        if (visible) visibleCount++;
+      });
+
+      // Show / hide empty state
+      if (noResults) {
+        noResults.classList.toggle('hidden', visibleCount > 0);
+      }
+    }
+
+    // --- Tag pill clicks ---
+    tagBtns?.forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeTag = btn.dataset.tag ?? 'all';
+        setActiveBtn(btn);
+        applyFilters();
+      });
+    });
+
+    // --- Search input ---
+    searchInput.addEventListener('input', applyFilters);
+  });
+</script>

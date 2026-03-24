@@ -1,0 +1,91 @@
+# =====================
+# Dependencies
+# =====================
+node_modules/
+.pnp
+.pnp.js
+
+# =====================
+# Build Output
+# =====================
+dist/
+.output/
+.vercel/
+.netlify/
+.cloudflare/
+
+# =====================
+# Astro
+# =====================
+.astro/
+
+# =====================
+# Environment Variables
+# =====================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+# Keep the example file (safe to commit)
+!.env.example
+
+# =====================
+# Logs
+# =====================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# =====================
+# OS Generated Files
+# =====================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# =====================
+# Editor & IDEs
+# =====================
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# =====================
+# TypeScript
+# =====================
+*.tsbuildinfo
+
+# =====================
+# Package Manager Locks
+# (keep only the one you use)
+# =====================
+# Uncomment the locks you do NOT use:
+# yarn.lock
+# pnpm-lock.yaml
+
+# =====================
+# Sanity Studio (if present in repo)
+# =====================
+.sanity/
+sanity/node_modules/
+
+# =====================
+# Misc
+# =====================
+*.local
+.cache/

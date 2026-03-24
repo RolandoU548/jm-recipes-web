@@ -1,0 +1,142 @@
+---
+// src/layouts/Layout.astro
+import { ViewTransitions } from "astro:transitions";
+export interface Props {
+  title: string;
+  description?: string;
+  image?: string;
+}
+
+const {
+  title,
+  description = "Simple, healthy, and delicious recipes for every day. Food that nourishes without the fuss.",
+  image = "/og-default.jpg",
+} = Astro.props;
+
+const canonicalURL = new URL(
+  Astro.url.pathname,
+  Astro.site ?? "https://jmrecipesweb.com",
+);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="generator" content={Astro.generator} />
+
+    <!-- View Transitions (SPA-like navigation) -->
+    <ViewTransitions />
+
+    <!-- Primary SEO -->
+    <title>{title} | JM Recipes Web</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:title" content={`${title} | JM Recipes Web`} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={image} />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={`${title} | JM Recipes Web`} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={image} />
+
+    <!-- Fonts & Styles -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Favicon placeholder -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Slot for extra head content (e.g. JSON-LD) -->
+    <slot name="head" />
+  </head>
+  <body class="min-h-screen flex flex-col bg-cream">
+    <!-- Header -->
+    <header-component></header-component>
+    <slot name="header-override">
+      <div id="header-mount"></div>
+    </slot>
+
+    <!-- Import actual header -->
+    {
+      /* Header is imported directly via component in each page via the layout component slot pattern */
+    }
+
+    <div
+      class="flex-1 w-full max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+    >
+      <!-- Two-column layout: main + sidebar. Collapses to single column on mobile -->
+      <div class="flex flex-col lg:flex-row gap-8">
+        <!-- Main content -->
+        <main class="flex-1 min-w-0">
+          <slot />
+        </main>
+
+        <!-- Sidebar -->
+        <aside class="w-full lg:w-80 shrink-0">
+          <slot name="sidebar">
+            <!-- Default sidebar ad placeholder -->
+            <div class="sticky top-6 space-y-6">
+              <div class="ad-placeholder min-h-[300px]">
+                <span class="ad-label mb-3 block">Advertisement</span>
+                <p class="text-xs text-gray-400 max-w-[200px]">
+                  Google AdSense 300×250 — Your ad here
+                </p>
+                <div
+                  class="mt-4 w-full h-[200px] bg-honey/10 rounded-lg flex items-center justify-center"
+                >
+                  <svg
+                    class="w-10 h-10 text-honey/40"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <rect
+                      x="3"
+                      y="3"
+                      width="18"
+                      height="18"
+                      rx="2"
+                      stroke-width="1.5"></rect>
+                    <path
+                      d="M9 9h6M9 12h6M9 15h4"
+                      stroke-width="1.5"
+                      stroke-linecap="round"></path>
+                  </svg>
+                </div>
+              </div>
+
+              <!-- About widget -->
+              <div class="card p-5">
+                <h3 class="font-serif text-lg mb-2">About Us</h3>
+                <p class="text-sm text-muted leading-relaxed">
+                  Simple, healthy recipes with 10 ingredients or less. We
+                  believe good food doesn't have to be complicated.
+                </p>
+                <a
+                  href="/about"
+                  class="btn-primary mt-4 text-center w-full block"
+                  >Learn More</a
+                >
+              </div>
+            </div>
+          </slot>
+        </aside>
+      </div>
+    </div>
+
+    <!-- Footer slot rendered by individual pages or directly imported -->
+    <slot name="footer" />
+  </body>
+</html>

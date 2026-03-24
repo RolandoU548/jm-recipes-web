@@ -1,0 +1,185 @@
+---
+const navLinks = [
+  { label: "Home", href: "/" },
+  { label: "Recipes", href: "/recipes" },
+  { label: "Podcast", href: "/podcast" },
+  { label: "Blog", href: "/blog" },
+  { label: "Community", href: "/community" },
+];
+
+const currentPath = Astro.url.pathname;
+---
+
+<header class="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-50">
+  <div class="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-16">
+      <button
+        id="hamburger-btn"
+        aria-label="Open mobile menu"
+        aria-expanded="false"
+        class="lg:hidden p-2 rounded-lg text-gray-600 hover:bg-honey/10 hover:text-bark transition-colors"
+      >
+        <span
+          id="hamburger-icon"
+          class="block text-2xl leading-none"
+          aria-hidden="true">☰</span
+        >
+      </button>
+
+      <a
+        href="/"
+        class="absolute left-1/2 -translate-x-1/2 lg:static lg:translate-x-0 flex items-center gap-2 group"
+        aria-label="JM Recipes Web – Home"
+      >
+        <svg
+          class="w-8 h-8 text-honey"
+          viewBox="0 0 32 32"
+          fill="currentColor"
+          aria-hidden="true"
+        >
+          <path
+            d="M16 2C10.5 2 6 6.5 6 12c0 3.5 1.7 6.6 4.3 8.6L16 30l5.7-9.4C24.3 18.6 26 15.5 26 12c0-5.5-4.5-10-10-10z"
+          ></path>
+        </svg>
+        <span
+          class="font-serif text-xl font-bold text-bark tracking-tight group-hover:text-honey transition-colors"
+        >
+          JM Recipes<span class="text-honey">Web</span>
+        </span>
+      </a>
+
+      <nav
+        class="hidden lg:flex items-center gap-1"
+        aria-label="Main navigation"
+      >
+        {
+          navLinks.map(({ label, href }) => {
+            const isHome =
+              currentPath === "/" ||
+              currentPath === "/index.html" ||
+              currentPath === "";
+            const isActive =
+              href === "/" ? isHome : currentPath.startsWith(href);
+
+            return (
+              <a
+                href={href}
+                class={`relative px-4 py-2 rounded-full text-sm font-medium transition-colors duration-150 ${
+                  isActive
+                    ? "text-bark font-semibold"
+                    : "text-gray-600 hover:text-bark"
+                }`}
+              >
+                {isActive && (
+                  <div
+                    class="absolute inset-0 bg-honey/20 rounded-full"
+                    transition:name="active-nav-pill"
+                  />
+                )}
+                <span class="relative z-10">{label}</span>
+              </a>
+            );
+          })
+        }
+      </nav>
+
+      <div class="hidden lg:flex items-center">
+        <div class="relative">
+          <input
+            id="search-desktop"
+            name="search"
+            type="search"
+            placeholder="Search recipes…"
+            aria-label="Search recipes"
+            class="w-48 xl:w-64 pl-9 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-honey focus:border-transparent placeholder:text-gray-400 transition-all duration-200"
+          />
+          <svg
+            class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <circle cx="11" cy="11" r="8" stroke-width="2"></circle>
+            <path d="M21 21l-4.35-4.35" stroke-width="2" stroke-linecap="round"
+            ></path>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="lg:hidden pb-3">
+      <div class="relative">
+        <input
+          id="search-mobile"
+          name="search"
+          type="search"
+          placeholder="Search recipes…"
+          class="w-full pl-9 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-honey focus:border-transparent placeholder:text-gray-400"
+        />
+        <svg
+          class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <circle cx="11" cy="11" r="8" stroke-width="2"></circle>
+          <path d="M21 21l-4.35-4.35" stroke-width="2" stroke-linecap="round"
+          ></path>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <nav
+    id="mobile-nav"
+    class="lg:hidden hidden border-t border-gray-100 bg-white"
+    aria-label="Mobile navigation"
+  >
+    <div class="max-w-screen-xl mx-auto px-4 py-3 flex flex-col gap-1">
+      {
+        navLinks.map(({ label, href }) => {
+          const isHome =
+            currentPath === "/" ||
+            currentPath === "/index.html" ||
+            currentPath === "";
+          const isActive = href === "/" ? isHome : currentPath.startsWith(href);
+
+          return (
+            <a
+              href={href}
+              class={`relative px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                isActive
+                  ? "text-bark font-semibold"
+                  : "text-gray-600 hover:text-bark hover:bg-gray-50"
+              }`}
+            >
+              {isActive && (
+                <div class="absolute inset-0 bg-honey/20 rounded-lg" />
+              )}
+              <span class="relative z-10">{label}</span>
+            </a>
+          );
+        })
+      }
+      <a href="/cookbook" class="mt-2 btn-primary text-center">
+        🍳 Get the Cookbook
+      </a>
+    </div>
+  </nav>
+</header>
+
+<script>
+  document.addEventListener("astro:page-load", () => {
+    const btn = document.getElementById("hamburger-btn");
+    const nav = document.getElementById("mobile-nav");
+    const icon = document.getElementById("hamburger-icon");
+
+    btn?.addEventListener("click", () => {
+      const isOpen = nav?.classList.toggle("hidden") === false;
+      if (icon) icon.textContent = isOpen ? "✕" : "☰";
+      btn?.setAttribute("aria-expanded", String(isOpen));
+    });
+  });
+</script>

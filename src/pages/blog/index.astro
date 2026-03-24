@@ -1,0 +1,141 @@
+---
+// src/pages/blog/index.astro
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import PostCard from '../../components/PostCard.astro';
+import { getPosts } from '../../lib/fetchData';
+
+const posts = await getPosts();
+
+// Extract deduplicated tags
+const allTags: string[] = ['All', ...Array.from(
+  new Set(posts.flatMap((p: any) => p.tags ?? []))
+).sort() as string[]];
+---
+
+<Layout title="Blog" description="Tips, stories, and inspiration from our kitchen to yours.">
+  <Header slot="header-override" />
+
+  <div class="mb-8">
+    <h1 class="section-title text-3xl md:text-4xl mb-2">From the Blog</h1>
+    <p class="text-muted">Tips, meal prep guides, and stories about living a nourishing life.</p>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="flex flex-col sm:flex-row gap-4 mb-8">
+    <div id="tag-filter-bar" class="flex flex-wrap gap-2 flex-1" role="group" aria-label="Filter by tag">
+      {allTags.map((tag, i) => (
+        <button
+          type="button"
+          data-tag={tag.toLowerCase()}
+          class={`tag-pill-btn px-4 py-2 rounded-full text-sm font-medium border transition-all duration-150 ${
+            i === 0
+              ? 'bg-honey border-honey text-bark'
+              : 'bg-white border-gray-200 text-gray-600 hover:border-honey hover:text-bark'
+          }`}
+        >
+          {tag}
+        </button>
+      ))}
+    </div>
+
+    <div class="relative sm:w-56 shrink-0 self-start">
+      <input
+        id="blog-search"
+        name="search"
+        type="search"
+        placeholder="Search posts…"
+        aria-label="Search blog posts"
+        class="w-full pl-9 pr-4 py-2 text-sm bg-white border border-gray-200 rounded-full
+               focus:outline-none focus:ring-2 focus:ring-honey focus:border-transparent"
+      />
+      <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+           fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="11" cy="11" r="8" stroke-width="2"/>
+        <path d="M21 21l-4.35-4.35" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </div>
+  </div>
+
+  {posts.length > 0 ? (
+    <div id="posts-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      {posts.map((post: any) => (
+        <div
+          class="post-card-wrapper"
+          data-title={post.title.toLowerCase()}
+          data-tags={post.tags?.join(',').toLowerCase() ?? ''}
+        >
+          <PostCard post={post} />
+        </div>
+      ))}
+    </div>
+  ) : (
+    <div class="text-center py-20">
+      <p class="text-muted text-lg">No posts yet. Check back soon!</p>
+    </div>
+  )}
+
+  <div id="no-results" class="hidden text-center py-20">
+    <p class="text-4xl mb-4">🔍</p>
+    <p class="text-muted text-lg font-medium">No posts match your search.</p>
+    <p class="text-muted text-sm mt-1">Try a different keyword or tag!</p>
+  </div>
+
+  <Footer slot="footer" />
+</Layout>
+
+<script>
+  document.addEventListener('astro:page-load', () => {
+    const searchInput = document.getElementById('blog-search') as HTMLInputElement | null;
+    const tagBar      = document.getElementById('tag-filter-bar');
+    const noResults   = document.getElementById('no-results');
+    const cards       = document.querySelectorAll<HTMLElement>('.post-card-wrapper');
+    const tagBtns     = tagBar?.querySelectorAll<HTMLButtonElement>('.tag-pill-btn');
+
+    if (!searchInput || !tagBar || !cards.length) return;
+
+    let activeTag = 'all';
+
+    const ACTIVE   = ['bg-honey', 'border-honey', 'text-bark'];
+    const INACTIVE = ['bg-white', 'border-gray-200', 'text-gray-600'];
+
+    function setActiveBtn(btn: HTMLButtonElement) {
+      tagBtns?.forEach(b => {
+        b.classList.remove(...ACTIVE);
+        b.classList.add(...INACTIVE);
+      });
+      btn.classList.remove(...INACTIVE);
+      btn.classList.add(...ACTIVE);
+    }
+
+    function applyFilters() {
+      const query = searchInput!.value.trim().toLowerCase();
+      let visibleCount = 0;
+
+      cards.forEach(card => {
+        const title = card.dataset.title ?? '';
+        const tags  = card.dataset.tags  ?? '';
+
+        const matchesTag    = activeTag === 'all' || tags.split(',').includes(activeTag);
+        const matchesSearch = !query || title.includes(query) || tags.includes(query);
+
+        const visible = matchesTag && matchesSearch;
+        card.style.display = visible ? '' : 'none';
+        if (visible) visibleCount++;
+      });
+
+      if (noResults) noResults.classList.toggle('hidden', visibleCount > 0);
+    }
+
+    tagBtns?.forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeTag = btn.dataset.tag ?? 'all';
+        setActiveBtn(btn);
+        applyFilters();
+      });
+    });
+
+    searchInput.addEventListener('input', applyFilters);
+  });
+</script>

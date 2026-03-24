@@ -1,0 +1,169 @@
+---
+// src/pages/podcast/index.astro
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import { getPodcasts } from '../../lib/fetchData';
+
+const episodes = await getPodcasts();
+
+// Podcasts don't have tags, so search only works on title/description
+---
+
+<Layout title="Podcast" description="Listen to the JM Recipes Web podcast — conversations about simple, nourishing food.">
+  <Header slot="header-override" />
+
+  <div class="mb-8">
+    <h1 class="section-title text-3xl md:text-4xl mb-2">The Podcast 🎙️</h1>
+    <p class="text-muted">Conversations about food, wellness, and living simply. New episodes every week.</p>
+  </div>
+
+  <!-- Search bar -->
+  <div class="flex justify-end mb-6">
+    <div class="relative w-full sm:w-64">
+      <input
+        id="podcast-search"
+        name="search"
+        type="search"
+        placeholder="Search episodes…"
+        aria-label="Search podcast episodes"
+        class="w-full pl-9 pr-4 py-2 text-sm bg-white border border-gray-200 rounded-full
+               focus:outline-none focus:ring-2 focus:ring-honey focus:border-transparent"
+      />
+      <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+           fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="11" cy="11" r="8" stroke-width="2"/>
+        <path d="M21 21l-4.35-4.35" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </div>
+  </div>
+
+  <div id="episodes-list" class="space-y-6">
+    {episodes.length > 0 ? episodes.map((ep: any, i: number) => {
+      const isEmbedUrl = ep.audioUrl
+        ? /spotify\.com\/embed|anchor\.fm|podcasts\.apple\.com|soundcloud\.com/.test(ep.audioUrl)
+        : false;
+
+      // Build plain description text for search
+      const descText = ep.description?.[0]?.children?.map((c: any) => c.text).join('') ?? '';
+
+      return (
+        <div
+          class="episode-card-wrapper card p-6 flex flex-col sm:flex-row gap-5"
+          data-title={ep.title.toLowerCase()}
+          data-desc={descText.toLowerCase()}
+        >
+          <!-- Episode number badge -->
+          <a
+            href={`/podcast/${ep.slug.current}`}
+            class="shrink-0 w-16 h-16 rounded-2xl bg-honey flex items-center justify-center hover:opacity-80 transition-opacity"
+            aria-label={`Go to episode: ${ep.title}`}
+          >
+            <span class="font-serif text-2xl font-bold text-bark">{String(i + 1).padStart(2, '0')}</span>
+          </a>
+
+          <!-- Content -->
+          <div class="flex-1 min-w-0">
+            <a href={`/podcast/${ep.slug.current}`} class="group block mb-1">
+              <h2 class="font-serif text-xl text-bark font-semibold group-hover:text-honey transition-colors">
+                {ep.title}
+              </h2>
+            </a>
+            <p class="text-muted text-sm mb-4 line-clamp-2">
+              {descText || 'Listen to this episode.'}
+            </p>
+
+            <!-- Smart Audio Player -->
+            {ep.audioUrl ? (
+              isEmbedUrl ? (
+                <div class="w-full h-[152px] rounded-xl border border-honey/20 shadow-sm overflow-hidden bg-cream shrink-0">
+                  <iframe
+                    src={ep.audioUrl}
+                    width="100%"
+                    height="152"
+                    frameborder="0"
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                    loading="lazy"
+                    title={`Listen to ${ep.title}`}
+                    class="w-full h-full border-0"
+                  />
+                </div>
+              ) : (
+                <audio
+                  controls
+                  class="w-full h-10 rounded-lg accent-honey"
+                  preload="none"
+                  aria-label={`Play episode: ${ep.title}`}
+                >
+                  <source src={ep.audioUrl} type="audio/mpeg" />
+                  <source src={ep.audioUrl} type="audio/ogg" />
+                  Your browser does not support the audio element.
+                </audio>
+              )
+            ) : (
+              <div class="flex items-center gap-3 bg-honey/10 rounded-xl px-4 py-3 text-sm text-muted">
+                <svg class="w-5 h-5 text-honey shrink-0" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+                <span>Audio coming soon</span>
+                <div class="flex-1 h-1.5 bg-honey/20 rounded-full ml-2">
+                  <div class="h-full w-1/3 bg-honey rounded-full"></div>
+                </div>
+              </div>
+            )}
+
+            <!-- Link to full episode -->
+            <div class="mt-3">
+              <a
+                href={`/podcast/${ep.slug.current}`}
+                class="text-sm font-medium text-honey hover:underline transition-colors"
+              >
+                Read episode notes →
+              </a>
+            </div>
+          </div>
+        </div>
+      );
+    }) : (
+      <div class="text-center py-20">
+        <p class="text-muted text-lg">No episodes yet. Check back soon!</p>
+      </div>
+    )}
+  </div>
+
+  <div id="no-results" class="hidden text-center py-20">
+    <p class="text-4xl mb-4">🎙️</p>
+    <p class="text-muted text-lg font-medium">No episodes match your search.</p>
+    <p class="text-muted text-sm mt-1">Try a different keyword!</p>
+  </div>
+
+  <Footer slot="footer" />
+</Layout>
+
+<script>
+  document.addEventListener('astro:page-load', () => {
+    const searchInput = document.getElementById('podcast-search') as HTMLInputElement | null;
+    const noResults   = document.getElementById('no-results');
+    const cards       = document.querySelectorAll<HTMLElement>('.episode-card-wrapper');
+
+    if (!searchInput || !cards.length) return;
+
+    function applyFilters() {
+      const query = searchInput!.value.trim().toLowerCase();
+      let visibleCount = 0;
+
+      cards.forEach(card => {
+        const title = card.dataset.title ?? '';
+        const desc  = card.dataset.desc  ?? '';
+
+        const visible = !query || title.includes(query) || desc.includes(query);
+        card.style.display = visible ? '' : 'none';
+        if (visible) visibleCount++;
+      });
+
+      if (noResults) noResults.classList.toggle('hidden', visibleCount > 0);
+    }
+
+    searchInput.addEventListener('input', applyFilters);
+  });
+</script>

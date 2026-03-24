@@ -1,0 +1,95 @@
+---
+// src/components/RecipeCard.astro
+import { urlFor } from '../lib/sanity';
+
+export interface Props {
+  recipe: {
+    _id: string;
+    title: string;
+    slug: { current: string };
+    mainImage?: any;
+    prepTime?: number;
+    cookTime?: number;
+    rating?: number;
+    tags?: string[];
+  };
+}
+
+const { recipe } = Astro.props;
+
+const imgSrc = recipe.mainImage
+  ? urlFor(recipe.mainImage).width(600).height(450).auto('format').url()
+  : null;
+
+const totalTime = (recipe.prepTime ?? 0) + (recipe.cookTime ?? 0);
+const stars = Math.round(recipe.rating ?? 0);
+---
+
+<a
+  href={`/recipes/${recipe.slug.current}`}
+  class="group card flex flex-col overflow-hidden"
+  aria-label={recipe.title}
+>
+  <!-- Image -->
+  <div class="relative overflow-hidden aspect-[4/3] bg-honey/10">
+    {imgSrc ? (
+      <img
+        src={imgSrc}
+        alt={recipe.title}
+        loading="lazy"
+        transition:name={`recipe-image-${recipe.slug.current}`}
+        class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+      />
+    ) : (
+      <div class="w-full h-full flex flex-col items-center justify-center gap-2 text-honey/40">
+        <svg class="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+        </svg>
+        <span class="text-xs font-medium text-muted">No image</span>
+      </div>
+    )}
+    <!-- View overlay -->
+    <div class="absolute inset-0 bg-bark/0 group-hover:bg-bark/20 transition-colors duration-300 flex items-center justify-center">
+      <span class="bg-honey text-bark text-xs font-bold px-5 py-2 rounded-full opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 shadow-lg">
+        View Recipe →
+      </span>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="p-4 flex flex-col flex-1">
+    <!-- Tags -->
+    {recipe.tags && recipe.tags.length > 0 && (
+      <div class="flex flex-wrap gap-1.5 mb-2">
+        {recipe.tags.slice(0, 2).map((tag) => (
+          <span class="tag-pill">{tag}</span>
+        ))}
+      </div>
+    )}
+
+    <!-- Title -->
+    <h3 class="font-serif text-lg font-semibold text-bark leading-snug mb-2 group-hover:text-honey transition-colors duration-200 text-balance">
+      {recipe.title}
+    </h3>
+
+    <!-- Meta: time + rating -->
+    <div class="mt-auto flex items-center justify-between text-xs text-muted pt-3 border-t border-gray-100">
+      {totalTime > 0 && (
+        <span class="flex items-center gap-1">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" stroke-width="2"/>
+            <path d="M12 6v6l4 2" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          {totalTime} min
+        </span>
+      )}
+      {recipe.rating && (
+        <span class="flex items-center gap-0.5 text-honey">
+          {'★'.repeat(stars)}
+          <span class="text-gray-300">{'★'.repeat(5 - stars)}</span>
+          <span class="text-muted ml-1">{recipe.rating.toFixed(1)}</span>
+        </span>
+      )}
+    </div>
+  </div>
+</a>

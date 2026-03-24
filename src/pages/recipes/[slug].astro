@@ -1,0 +1,174 @@
+---
+// src/pages/recipes/[slug].astro
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import AdBanner from '../../components/AdBanner.astro';
+import PortableTextRenderer from '../../components/PortableTextRenderer';
+import { getAllRecipeSlugs, getRecipeBySlug } from '../../lib/fetchData';
+import { urlFor } from '../../lib/sanity';
+
+export async function getStaticPaths() {
+  const slugs = await getAllRecipeSlugs();
+  return slugs.map(({ slug }) => ({ params: { slug } }));
+}
+
+const { slug } = Astro.params;
+const recipe = await getRecipeBySlug(slug!);
+
+if (!recipe) {
+  return Astro.redirect('/recipes');
+}
+
+const imgSrc = recipe.mainImage
+  ? urlFor(recipe.mainImage).width(1200).height(700).auto('format').url()
+  : null;
+
+const totalTime = (recipe.prepTime ?? 0) + (recipe.cookTime ?? 0);
+
+// ── JSON-LD Recipe Schema ────────────────────────────────────────────────────
+const ingredientStrings: string[] = (recipe.ingredients ?? [])
+  .filter((b: any) => b._type === 'block')
+  .map((b: any) => b.children?.map((c: any) => c.text).join('') ?? '');
+
+const instructionSteps = (recipe.instructions ?? [])
+  .filter((b: any) => b._type === 'block')
+  .map((b: any, i: number) => ({
+    '@type': 'HowToStep',
+    position: i + 1,
+    text: b.children?.map((c: any) => c.text).join('') ?? '',
+  }));
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Recipe',
+  name: recipe.title,
+  description: `A delicious recipe for ${recipe.title}.`,
+  image: imgSrc ? [imgSrc] : [],
+  author: { '@type': 'Organization', name: 'JM Recipes Web' },
+  datePublished: recipe._createdAt ?? new Date().toISOString().split('T')[0],
+  prepTime: recipe.prepTime ? `PT${recipe.prepTime}M` : undefined,
+  cookTime: recipe.cookTime ? `PT${recipe.cookTime}M` : undefined,
+  totalTime: totalTime > 0 ? `PT${totalTime}M` : undefined,
+  recipeYield: '4 servings',
+  recipeCategory: recipe.tags?.[0] ?? 'Main Course',
+  keywords: recipe.tags?.join(', ') ?? '',
+  aggregateRating: recipe.rating
+    ? { '@type': 'AggregateRating', ratingValue: recipe.rating, ratingCount: 1, bestRating: 5 }
+    : undefined,
+  recipeIngredient: ingredientStrings,
+  recipeInstructions: instructionSteps,
+};
+---
+
+<Layout
+  title={recipe.title}
+  description={`Make this simple and delicious ${recipe.title} recipe in ${totalTime > 0 ? `${totalTime} minutes` : 'no time'}.`}
+  image={imgSrc ?? undefined}
+>
+  <!-- JSON-LD -->
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
+  <Header slot="header-override" />
+
+  <!-- Breadcrumb -->
+  <nav class="text-sm text-muted mb-6 flex items-center gap-2" aria-label="Breadcrumb">
+    <a href="/" class="hover:text-honey transition-colors">Home</a>
+    <span aria-hidden="true">›</span>
+    <a href="/recipes" class="hover:text-honey transition-colors">Recipes</a>
+    <span aria-hidden="true">›</span>
+    <span class="text-bark font-medium truncate">{recipe.title}</span>
+  </nav>
+
+  <!-- Title & Meta -->
+  <h1 class="font-serif text-3xl md:text-4xl lg:text-5xl text-bark font-bold mb-4 leading-tight text-balance">
+    {recipe.title}
+  </h1>
+
+  <!-- Time & Rating strip -->
+  <div class="flex flex-wrap items-center gap-4 mb-6 text-sm">
+    {recipe.prepTime && (
+      <div class="flex flex-col items-center bg-cream border border-honey/30 rounded-xl px-4 py-2 min-w-[80px]">
+        <span class="text-muted text-xs uppercase tracking-wider">Prep</span>
+        <span class="font-bold text-bark">{recipe.prepTime} min</span>
+      </div>
+    )}
+    {recipe.cookTime && (
+      <div class="flex flex-col items-center bg-cream border border-honey/30 rounded-xl px-4 py-2 min-w-[80px]">
+        <span class="text-muted text-xs uppercase tracking-wider">Cook</span>
+        <span class="font-bold text-bark">{recipe.cookTime} min</span>
+      </div>
+    )}
+    {totalTime > 0 && (
+      <div class="flex flex-col items-center bg-honey/10 border border-honey rounded-xl px-4 py-2 min-w-[80px]">
+        <span class="text-muted text-xs uppercase tracking-wider">Total</span>
+        <span class="font-bold text-bark">{totalTime} min</span>
+      </div>
+    )}
+    {recipe.rating && (
+      <div class="flex items-center gap-1 ml-auto">
+        <span class="text-honey text-lg">{'★'.repeat(Math.round(recipe.rating))}</span>
+        <span class="text-muted text-sm ml-1">{recipe.rating.toFixed(1)} / 5</span>
+      </div>
+    )}
+  </div>
+
+  <!-- Tags -->
+  {recipe.tags && recipe.tags.length > 0 && (
+    <div class="flex flex-wrap gap-2 mb-6">
+      {recipe.tags.map((tag: string) => <span class="tag-pill">{tag}</span>)}
+    </div>
+  )}
+
+  <!-- Hero Image -->
+  {imgSrc && (
+    <div class="relative w-full aspect-[16/9] rounded-2xl overflow-hidden mb-8 shadow-md">
+      <img
+        src={imgSrc}
+        alt={recipe.title}
+        transition:name={`recipe-image-${recipe.slug.current}`}
+        class="w-full h-full object-cover"
+      />
+    </div>
+  )}
+
+  <!-- House Ad (above ingredients) -->
+  <div class="mb-8">
+    <AdBanner type="house" />
+  </div>
+
+  <!-- Two-column content: Ingredients | Instructions -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-10 mb-10">
+
+    <!-- Ingredients -->
+    <div>
+      <h2 class="font-serif text-2xl text-bark mb-4 pb-2 border-b-2 border-honey">
+        🛒 Ingredients
+      </h2>
+      <PortableTextRenderer
+        client:load
+        value={recipe.ingredients ?? []}
+        className="ingredients"
+      />
+    </div>
+
+    <!-- Instructions -->
+    <div>
+      <h2 class="font-serif text-2xl text-bark mb-4 pb-2 border-b-2 border-honey">
+        👨‍🍳 Instructions
+      </h2>
+      <!-- Mid-content AdSense slot -->
+      <div class="mb-6">
+        <AdBanner type="adsense" />
+      </div>
+      <PortableTextRenderer
+        client:load
+        value={recipe.instructions ?? []}
+        className="instructions"
+      />
+    </div>
+
+  </div>
+
+  <Footer slot="footer" />
+</Layout>

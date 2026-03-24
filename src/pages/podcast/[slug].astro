@@ -1,0 +1,179 @@
+---
+// src/pages/podcast/[slug].astro
+import Layout from "../../layouts/Layout.astro";
+import Header from "../../components/Header.astro";
+import Footer from "../../components/Footer.astro";
+import AdBanner from "../../components/AdBanner.astro";
+import PortableTextRenderer from "../../components/PortableTextRenderer";
+import { getAllPodcastSlugs, getPodcastBySlug } from "../../lib/fetchData";
+
+export async function getStaticPaths() {
+  const slugs = await getAllPodcastSlugs();
+  return slugs.map(({ slug }) => ({ params: { slug } }));
+}
+
+const { slug } = Astro.params;
+const podcast = await getPodcastBySlug(slug!);
+
+if (!podcast) {
+  return Astro.redirect("/podcast");
+}
+
+const datePublished = podcast._createdAt
+  ? new Date(podcast._createdAt).toISOString()
+  : new Date().toISOString();
+
+const dateFormatted = podcast._createdAt
+  ? new Date(podcast._createdAt).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    })
+  : "";
+
+// Determine if audioUrl is an embeddable iframe URL (e.g. Spotify, Anchor, etc.)
+const isEmbedUrl = podcast.audioUrl
+  ? /spotify\.com\/embed|anchor\.fm|podcasts\.apple\.com|soundcloud\.com/.test(
+      podcast.audioUrl,
+    )
+  : false;
+
+// ── JSON-LD PodcastEpisode Schema ─────────────────────────────────────────────
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "PodcastEpisode",
+  name: podcast.title,
+  description:
+    podcast.excerpt ??
+    `Listen to ${podcast.title} on JM Recipes Web Podcast.`,
+  datePublished,
+  associatedMedia: podcast.audioUrl
+    ? {
+        "@type": "MediaObject",
+        contentUrl: podcast.audioUrl,
+        encodingFormat: "audio/mpeg",
+      }
+    : undefined,
+  partOfSeries: {
+    "@type": "PodcastSeries",
+    name: "JM Recipes Web Podcast",
+    url: "https://jmrecipesweb.com/podcast",
+  },
+  author: {
+    "@type": "Organization",
+    name: "JM Recipes Web",
+    url: "https://jmrecipesweb.com",
+  },
+  url: `https://jmrecipesweb.com/podcast/${slug}`,
+};
+---
+
+<Layout
+  title={podcast.title}
+  description={podcast.excerpt ??
+    `Listen to ${podcast.title} on the JM Recipes Web Podcast.`}
+>
+  <!-- JSON-LD -->
+  <script
+    slot="head"
+    type="application/ld+json"
+    set:html={JSON.stringify(jsonLd)}
+  />
+
+  <Header slot="header-override" />
+
+  <!-- Breadcrumb -->
+  <nav
+    class="text-sm text-muted mb-6 flex items-center gap-2"
+    aria-label="Breadcrumb"
+  >
+    <a href="/" class="hover:text-honey transition-colors">Home</a>
+    <span aria-hidden="true">›</span>
+    <a href="/podcast" class="hover:text-honey transition-colors">Podcast</a>
+    <span aria-hidden="true">›</span>
+    <span class="text-bark font-medium truncate">{podcast.title}</span>
+  </nav>
+
+  <!-- Title -->
+  <h1
+    class="font-serif text-3xl md:text-4xl lg:text-5xl text-bark font-bold mb-4 leading-tight text-balance"
+  >
+    {podcast.title}
+  </h1>
+
+  <!-- Date -->
+  {
+    dateFormatted && (
+      <p class="text-sm text-muted mb-6">
+        <time datetime={datePublished}>{dateFormatted}</time>
+      </p>
+    )
+  }
+
+  <!-- Audio Player -->
+  {
+    podcast.audioUrl && (
+      <div class="mb-8">
+        {isEmbedUrl ? (
+          <div class="w-full h-[152px] rounded-xl border border-honey/20 shadow-sm overflow-hidden bg-cream shrink-0">
+            <iframe
+              src={podcast.audioUrl}
+              width="100%"
+              height="152"
+              frameborder="0"
+              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+              loading="lazy"
+              title={`Listen to ${podcast.title}`}
+              class="w-full h-full border-0"
+            />
+          </div>
+        ) : (
+          <div class="bg-cream border border-honey/30 rounded-2xl p-6 shadow-sm">
+            <p class="text-sm text-muted mb-3 font-medium uppercase tracking-wider">
+              🎙 Listen to this episode
+            </p>
+            <audio
+              controls
+              class="w-full"
+              preload="metadata"
+              aria-label={`Audio player for ${podcast.title}`}
+            >
+              <source src={podcast.audioUrl} type="audio/mpeg" />
+              <source src={podcast.audioUrl} type="audio/ogg" />
+              Your browser does not support the audio element.
+            </audio>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  {
+    !podcast.audioUrl && (
+      <div class="bg-cream border border-honey/20 rounded-2xl p-6 mb-8 text-center text-muted text-sm">
+        🎙 Audio coming soon — check back shortly!
+      </div>
+    )
+  }
+
+  <!-- House Ad (above episode notes) -->
+  <div class="mb-8">
+    <AdBanner type="house" />
+  </div>
+
+  <!-- Episode Notes / Description -->
+  {
+    podcast.description && (
+      <section class="mb-10">
+        <h2 class="font-serif text-2xl text-bark mb-4 pb-2 border-b-2 border-honey">
+          Episode Notes
+        </h2>
+        <div class="prose prose-bark max-w-none">
+          <PortableTextRenderer client:load value={podcast.description ?? []} />
+        </div>
+      </section>
+    )
+  }
+
+  <Footer slot="footer" />
+</Layout>
