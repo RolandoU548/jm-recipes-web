@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Background circle -->
+  <circle cx="32" cy="32" r="32" fill="#FFC857"/>
+
+  <!-- Fork handle -->
+  <rect x="30" y="30" width="4" height="18" rx="2" fill="#3D2B1F"/>
+
+  <!-- Fork tines -->
+  <rect x="24" y="14" width="3" height="14" rx="1.5" fill="#3D2B1F"/>
+  <rect x="30.5" y="14" width="3" height="14" rx="1.5" fill="#3D2B1F"/>
+  <rect x="37" y="14" width="3" height="14" rx="1.5" fill="#3D2B1F"/>
+
+  <!-- Fork neck connecting tines to handle -->
+  <path d="M26 28 C26 30 38 30 38 28 L38 26 C38 26 32 28 26 26 Z" fill="#3D2B1F"/>
+
+  <!-- Small leaf accent top-right -->
+  <path d="M44 12 C44 12 52 14 50 22 C50 22 42 20 44 12 Z" fill="#3D2B1F" opacity="0.85"/>
+  <path d="M44 12 L50 22" stroke="#FFC857" stroke-width="1.2" stroke-linecap="round"/>
+</svg>

@@ -8,6 +8,38 @@ const hasSanityConfig =
   import.meta.env.PUBLIC_SANITY_PROJECT_ID &&
   import.meta.env.PUBLIC_SANITY_PROJECT_ID !== 'placeholder';
 
+/**
+ * Converts a YouTube watch/short URL into an embeddable URL.
+ * Returns null if the input is not a recognisable YouTube URL.
+ */
+export function toYouTubeEmbedUrl(url: string): string | null {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    // Already an embed URL
+    if (u.hostname.includes('youtube.com') && u.pathname.startsWith('/embed/')) {
+      return url;
+    }
+    // youtube.com/watch?v=ID
+    if (u.hostname.includes('youtube.com') && u.searchParams.has('v')) {
+      return `https://www.youtube.com/embed/${u.searchParams.get('v')}`;
+    }
+    // youtube.com/shorts/ID
+    if (u.hostname.includes('youtube.com') && u.pathname.startsWith('/shorts/')) {
+      const id = u.pathname.split('/shorts/')[1].split('/')[0];
+      return `https://www.youtube.com/embed/${id}`;
+    }
+    // youtu.be/ID
+    if (u.hostname === 'youtu.be') {
+      const id = u.pathname.replace('/', '');
+      return `https://www.youtube.com/embed/${id}`;
+    }
+  } catch {
+    // invalid URL — fall through
+  }
+  return null;
+}
+
 async function safeFetch<T>(query: string, params: Record<string, unknown> = {}): Promise<T[]> {
   if (!hasSanityConfig) return [];
   try {
@@ -41,7 +73,11 @@ export async function getFeaturedRecipes(limit = 3) {
 
 export async function getRecipeBySlug(slug: string) {
   const data = await safeFetch<any>(
-    `*[_type == "recipe" && slug.current == $slug][0]`,
+    `*[_type == "recipe" && slug.current == $slug][0] {
+      _id, _type, title, slug, mainImage, videoUrl,
+      prepTime, cookTime, rating, tags, ingredients, instructions,
+      _createdAt, _updatedAt
+    }`,
     { slug }
   );
   const found = Array.isArray(data) ? data[0] : data;
@@ -81,7 +117,7 @@ export async function getAllPostSlugs(): Promise<{ slug: string }[]> {
 export async function getPostBySlug(slug: string) {
   const data = await safeFetch<any>(
     `*[_type == "post" && slug.current == $slug][0] {
-      _id, _type, title, slug, mainImage, tags, body, excerpt, _createdAt, _updatedAt
+      _id, _type, title, slug, mainImage, videoUrl, tags, body, excerpt, _createdAt, _updatedAt
     }`,
     { slug }
   );

@@ -5,7 +5,7 @@ import Header from '../../components/Header.astro';
 import Footer from '../../components/Footer.astro';
 import AdBanner from '../../components/AdBanner.astro';
 import PortableTextRenderer from '../../components/PortableTextRenderer';
-import { getAllPostSlugs, getPostBySlug } from '../../lib/fetchData';
+import { getAllPostSlugs, getPostBySlug, toYouTubeEmbedUrl } from '../../lib/fetchData';
 import { urlFor } from '../../lib/sanity';
 
 export async function getStaticPaths() {
@@ -35,6 +35,8 @@ const dateFormatted = post._createdAt
       day: 'numeric',
     })
   : '';
+
+const embedUrl = toYouTubeEmbedUrl(post.videoUrl ?? '');
 
 // ── JSON-LD BlogPosting Schema ────────────────────────────────────────────────
 const jsonLd = {
@@ -104,8 +106,19 @@ const jsonLd = {
     )}
   </div>
 
-  <!-- Hero Image -->
-  {imgSrc && (
+  <!-- Hero: Video (priority) or Image (fallback) -->
+  {embedUrl ? (
+    <div class="aspect-video w-full rounded-2xl overflow-hidden mb-8 shadow-md bg-gray-900">
+      <iframe
+        src={embedUrl}
+        title={`${post.title} — video`}
+        class="w-full h-full"
+        frameborder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen
+      />
+    </div>
+  ) : imgSrc && (
     <div class="relative w-full aspect-[16/9] rounded-2xl overflow-hidden mb-8 shadow-md">
       <img
         src={imgSrc}
