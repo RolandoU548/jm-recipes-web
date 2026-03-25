@@ -1,37 +1,60 @@
 ---
 // src/pages/index.astro
-import Layout from '../layouts/Layout.astro';
-import Header from '../components/Header.astro';
-import Footer from '../components/Footer.astro';
-import RecipeCard from '../components/RecipeCard.astro';
-import PostCard from '../components/PostCard.astro';
-import AdBanner from '../components/AdBanner.astro';
-import { getFeaturedRecipes, getMixedFeed, getHouseAds } from '../lib/fetchData';
-import type { Recipe } from '../lib/types';
+import Layout from "../layouts/Layout.astro";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import RecipeCard from "../components/RecipeCard.astro";
+import PostCard from "../components/PostCard.astro";
+import AdBanner from "../components/AdBanner.astro";
+import {
+  getFeaturedRecipes,
+  getMixedFeed,
+  getHouseAds,
+} from "../lib/fetchData";
+import type { Recipe } from "../lib/types";
 
 const featuredRecipes = await getFeaturedRecipes(3);
-const rawMixedFeed    = await getMixedFeed(12);
+const rawMixedFeed = await getMixedFeed(12);
 // Prevent duplicate transition names by filtering out featured recipes
-const mixedFeed       = rawMixedFeed
-  .filter((item: any) => !featuredRecipes.some((f: Recipe) => f.slug?.current === item.slug?.current))
+const mixedFeed = rawMixedFeed
+  .filter(
+    (item: any) =>
+      !featuredRecipes.some(
+        (f: Recipe) => f.slug?.current === item.slug?.current,
+      ),
+  )
   .slice(0, 8);
-const houseAds        = await getHouseAds();
-const houseAd         = houseAds?.[0] ?? null;
+const houseAds = await getHouseAds();
+const houseAd = houseAds?.[0] ?? null;
 
-const asSeenOn = ['The New York Times', 'BuzzFeed', 'Food Network', 'Oprah', 'Forbes', 'Bon Appétit'];
+const asSeenOn = [
+  "The New York Times",
+  "BuzzFeed",
+  "Food Network",
+  "Oprah",
+  "Forbes",
+  "Bon Appétit",
+];
 
 const jsonLd = {
   "@context": "https://schema.org",
   "@type": "WebSite",
   name: "JM Recipes Web",
   url: Astro.site ?? "https://jm-recipes.web",
-  description: "Simple, healthy, delicious recipes — 10 ingredients or less."
+  description: "Simple, healthy, delicious recipes — 10 ingredients or less.",
 };
 ---
 
-<Layout title="Home" description="Simple, healthy, delicious recipes — 10 ingredients or less.">
+<Layout
+  title="Home"
+  description="Simple, healthy, delicious recipes — 10 ingredients or less."
+>
   <!-- JSON-LD -->
-  <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  <script
+    slot="head"
+    type="application/ld+json"
+    set:html={JSON.stringify(jsonLd)}
+  />
 
   <Header slot="header-override" />
 
@@ -41,16 +64,18 @@ const jsonLd = {
       <h1 class="font-serif text-3xl md:text-4xl text-bark">
         Simple food, <span class="text-honey italic">simply delicious.</span>
       </h1>
-      <a href="/recipes" class="btn-outline hidden sm:inline-block shrink-0">All Recipes →</a>
+      <a href="/recipes" class="btn-outline hidden sm:inline-block shrink-0"
+        >All Recipes →</a
+      >
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-      {featuredRecipes.map((recipe: Recipe) => (
-        <RecipeCard recipe={recipe} />
-      ))}
+      {featuredRecipes.map((recipe: Recipe) => <RecipeCard recipe={recipe} />)}
     </div>
     <div class="mt-4 sm:hidden">
-      <a href="/recipes" class="btn-outline w-full text-center block">All Recipes →</a>
+      <a href="/recipes" class="btn-outline w-full text-center block"
+        >All Recipes →</a
+      >
     </div>
   </section>
 
@@ -63,34 +88,44 @@ const jsonLd = {
   <section aria-label="Latest Recipes & Posts" class="mb-12">
     <h2 class="section-title">Latest From the Kitchen</h2>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-      {mixedFeed.map((item: any, i: number) => {
-        // Insert AdSense block after the 5th item
-        const isAdSlot = i === 4;
-        return (
-          <>
-            {isAdSlot && (
-              <div class="sm:col-span-2 lg:col-span-1 flex items-stretch">
-                <AdBanner type="adsense" class="flex-1 min-h-[200px]" />
-              </div>
-            )}
-            {item._type === 'recipe' ? (
-              <RecipeCard recipe={item} />
-            ) : (
-              <PostCard post={item} />
-            )}
-          </>
-        );
-      })}
+      {
+        mixedFeed.map((item: any, i: number) => {
+          // Insert AdSense block after the 5th item
+          const isAdSlot = i === 4;
+          return (
+            <>
+              {isAdSlot && (
+                <div class="sm:col-span-2 lg:col-span-1 flex items-stretch">
+                  <AdBanner type="adsense" class="flex-1 min-h-[200px]" />
+                </div>
+              )}
+              {item._type === "recipe" ? (
+                <RecipeCard recipe={item} />
+              ) : (
+                <PostCard post={item} />
+              )}
+            </>
+          );
+        })
+      }
     </div>
   </section>
 
   <!-- ═══ As Seen On ═══ -->
   <section aria-label="Media Features" class="mb-6">
-    <p class="text-center text-xs font-semibold uppercase tracking-widest text-muted mb-6">As Seen On</p>
+    <p
+      class="text-center text-xs font-semibold uppercase tracking-widest text-muted mb-6"
+    >
+      As Seen On
+    </p>
     <div class="flex flex-wrap items-center justify-center gap-6 md:gap-10">
-      {asSeenOn.map((name) => (
-        <span class="font-serif text-lg md:text-xl text-gray-300 font-bold italic select-none">{name}</span>
-      ))}
+      {
+        asSeenOn.map((name) => (
+          <span class="font-serif text-lg md:text-xl text-gray-300 font-bold italic select-none">
+            {name}
+          </span>
+        ))
+      }
     </div>
   </section>
 
