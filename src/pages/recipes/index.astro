@@ -5,12 +5,13 @@ import Header from "../../components/Header.astro";
 import Footer from "../../components/Footer.astro";
 import RecipeCard from "../../components/RecipeCard.astro";
 import { getRecipes } from "../../lib/fetchData";
+import type { Recipe } from "../../lib/types";
 
 const recipes = await getRecipes();
 
 // Count tag frequency across all recipes
 const tagFrequency = new Map<string, number>();
-recipes.forEach((r: any) => {
+recipes.forEach((r: Recipe) => {
   (r.tags ?? []).forEach((tag: string) => {
     tagFrequency.set(tag, (tagFrequency.get(tag) ?? 0) + 1);
   });
@@ -24,12 +25,37 @@ const topTags: string[] = [...tagFrequency.entries()]
   .map(([tag]) => tag);
 
 const allTags: string[] = ["All", ...topTags];
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  name: "All Recipes",
+  description:
+    "Browse our full collection of simple, healthy, and delicious recipes.",
+  url: Astro.url.href,
+  itemListElement: recipes.map((recipe: Recipe, index: number) => ({
+    "@type": "ListItem",
+    position: index + 1,
+    url: new URL(
+      `/recipes/${recipe.slug.current}`,
+      Astro.site ?? "https://jm-recipes.web",
+    ).href,
+    name: recipe.title,
+  })),
+};
 ---
 
 <Layout
   title="All Recipes"
   description="Browse our full collection of simple, healthy, and delicious recipes."
 >
+  <!-- JSON-LD -->
+  <script
+    slot="head"
+    type="application/ld+json"
+    set:html={JSON.stringify(jsonLd)}
+  />
+
   <Header slot="header-override" />
 
   <!-- Page header -->
@@ -74,6 +100,7 @@ const allTags: string[] = ["All", ...topTags];
         id="recipes-search"
         name="search"
         type="search"
+        autocomplete="off"
         placeholder="Search recipes…"
         aria-label="Search recipes"
         class="w-full pl-9 pr-4 py-2 text-sm bg-white border border-gray-200 rounded-full
@@ -100,7 +127,7 @@ const allTags: string[] = ["All", ...topTags];
         id="recipes-grid"
         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
       >
-        {recipes.map((recipe: any) => (
+        {recipes.map((recipe: Recipe) => (
           <div
             class="recipe-card-wrapper"
             data-title={recipe.title.toLowerCase()}
@@ -206,3 +233,4 @@ const allTags: string[] = ["All", ...topTags];
     searchInput.addEventListener("input", applyFilters);
   });
 </script>
+

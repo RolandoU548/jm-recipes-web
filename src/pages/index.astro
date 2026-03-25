@@ -7,20 +7,32 @@ import RecipeCard from '../components/RecipeCard.astro';
 import PostCard from '../components/PostCard.astro';
 import AdBanner from '../components/AdBanner.astro';
 import { getFeaturedRecipes, getMixedFeed, getHouseAds } from '../lib/fetchData';
+import type { Recipe } from '../lib/types';
 
 const featuredRecipes = await getFeaturedRecipes(3);
 const rawMixedFeed    = await getMixedFeed(12);
 // Prevent duplicate transition names by filtering out featured recipes
 const mixedFeed       = rawMixedFeed
-  .filter((item: any) => !featuredRecipes.some((f: any) => f.slug?.current === item.slug?.current))
+  .filter((item: any) => !featuredRecipes.some((f: Recipe) => f.slug?.current === item.slug?.current))
   .slice(0, 8);
 const houseAds        = await getHouseAds();
 const houseAd         = houseAds?.[0] ?? null;
 
 const asSeenOn = ['The New York Times', 'BuzzFeed', 'Food Network', 'Oprah', 'Forbes', 'Bon Appétit'];
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "JM Recipes Web",
+  url: Astro.site ?? "https://jm-recipes.web",
+  description: "Simple, healthy, delicious recipes — 10 ingredients or less."
+};
 ---
 
 <Layout title="Home" description="Simple, healthy, delicious recipes — 10 ingredients or less.">
+  <!-- JSON-LD -->
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
   <Header slot="header-override" />
 
   <!-- ═══ Hero: 3-column featured recipe grid ═══ -->
@@ -33,7 +45,7 @@ const asSeenOn = ['The New York Times', 'BuzzFeed', 'Food Network', 'Oprah', 'Fo
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-      {featuredRecipes.map((recipe: any) => (
+      {featuredRecipes.map((recipe: Recipe) => (
         <RecipeCard recipe={recipe} />
       ))}
     </div>

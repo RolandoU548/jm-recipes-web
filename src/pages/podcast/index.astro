@@ -8,9 +8,26 @@ import { getPodcasts } from '../../lib/fetchData';
 const episodes = await getPodcasts();
 
 // Podcasts don't have tags, so search only works on title/description
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "name": "The Podcast",
+  "description": "Listen to the JM Recipes Web podcast — conversations about simple, nourishing food.",
+  "url": Astro.url.href,
+  "itemListElement": episodes.map((ep: any, index: number) => ({
+    "@type": "ListItem",
+    "position": index + 1,
+    "url": new URL(`/podcast/${ep.slug.current}`, Astro.site ?? "https://jm-recipes.web").href,
+    "name": ep.title
+  }))
+};
 ---
 
 <Layout title="Podcast" description="Listen to the JM Recipes Web podcast — conversations about simple, nourishing food.">
+  <!-- JSON-LD -->
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
   <Header slot="header-override" />
 
   <div class="mb-8">
@@ -25,6 +42,7 @@ const episodes = await getPodcasts();
         id="podcast-search"
         name="search"
         type="search"
+        autocomplete="off"
         placeholder="Search episodes…"
         aria-label="Search podcast episodes"
         class="w-full pl-9 pr-4 py-2 text-sm bg-white border border-gray-200 rounded-full

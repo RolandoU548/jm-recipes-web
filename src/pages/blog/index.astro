@@ -12,9 +12,26 @@ const posts = await getPosts();
 const allTags: string[] = ['All', ...Array.from(
   new Set(posts.flatMap((p: any) => p.tags ?? []))
 ).sort() as string[]];
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "name": "From the Blog",
+  "description": "Tips, stories, and inspiration from our kitchen to yours.",
+  "url": Astro.url.href,
+  "itemListElement": posts.map((post: any, index: number) => ({
+    "@type": "ListItem",
+    "position": index + 1,
+    "url": new URL(`/blog/${post.slug.current}`, Astro.site ?? "https://jm-recipes.web").href,
+    "name": post.title
+  }))
+};
 ---
 
 <Layout title="Blog" description="Tips, stories, and inspiration from our kitchen to yours.">
+  <!-- JSON-LD -->
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
   <Header slot="header-override" />
 
   <div class="mb-8">
@@ -45,6 +62,7 @@ const allTags: string[] = ['All', ...Array.from(
         id="blog-search"
         name="search"
         type="search"
+        autocomplete="off"
         placeholder="Search posts…"
         aria-label="Search blog posts"
         class="w-full pl-9 pr-4 py-2 text-sm bg-white border border-gray-200 rounded-full

@@ -3,6 +3,7 @@
 
 import { client } from './sanity';
 import { mockRecipes, mockPosts, mockPodcasts } from './mockData';
+import type { Recipe } from './types';
 
 const hasSanityConfig =
   import.meta.env.PUBLIC_SANITY_PROJECT_ID &&
@@ -52,27 +53,27 @@ async function safeFetch<T>(query: string, params: Record<string, unknown> = {})
 
 // ── Recipes ───────────────────────────────────────────────────────────────────
 
-export async function getRecipes() {
-  const data = await safeFetch<any>(
+export async function getRecipes(): Promise<Recipe[]> {
+  const data = await safeFetch<Recipe>(
     `*[_type == "recipe"] | order(_createdAt desc) {
       _id, _type, title, slug, mainImage, prepTime, cookTime, rating, tags, _createdAt
     }`
   );
-  return data.length > 0 ? data : [...mockRecipes];
+  return data.length > 0 ? data : [...mockRecipes] as unknown as Recipe[];
 }
 
-export async function getFeaturedRecipes(limit = 3) {
-  const data = await safeFetch<any>(
+export async function getFeaturedRecipes(limit = 3): Promise<Recipe[]> {
+  const data = await safeFetch<Recipe>(
     `*[_type == "recipe"] | order(_createdAt desc) [0...$limit] {
       _id, _type, title, slug, mainImage, prepTime, cookTime, rating, tags, _createdAt
     }`,
     { limit }
   );
-  return data.length > 0 ? data : [...mockRecipes].slice(0, limit);
+  return data.length > 0 ? data : ([...mockRecipes].slice(0, limit) as unknown as Recipe[]);
 }
 
-export async function getRecipeBySlug(slug: string) {
-  const data = await safeFetch<any>(
+export async function getRecipeBySlug(slug: string): Promise<Recipe> {
+  const data = await safeFetch<Recipe>(
     `*[_type == "recipe" && slug.current == $slug][0] {
       _id, _type, title, slug, mainImage, videoUrl,
       prepTime, cookTime, rating, tags, ingredients, instructions,
@@ -82,7 +83,7 @@ export async function getRecipeBySlug(slug: string) {
   );
   const found = Array.isArray(data) ? data[0] : data;
   if (found) return found;
-  return mockRecipes.find((r) => r.slug.current === slug) ?? mockRecipes[0];
+  return (mockRecipes.find((r) => r.slug.current === slug) ?? mockRecipes[0]) as unknown as Recipe;
 }
 
 export async function getAllRecipeSlugs(): Promise<{ slug: string }[]> {

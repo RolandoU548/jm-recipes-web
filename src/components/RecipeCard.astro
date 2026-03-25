@@ -2,17 +2,10 @@
 // src/components/RecipeCard.astro
 import { urlFor } from '../lib/sanity';
 
+import type { Recipe } from '../lib/types';
+
 export interface Props {
-  recipe: {
-    _id: string;
-    title: string;
-    slug: { current: string };
-    mainImage?: any;
-    prepTime?: number;
-    cookTime?: number;
-    rating?: number;
-    tags?: string[];
-  };
+  recipe: Recipe;
 }
 
 const { recipe } = Astro.props;
@@ -83,11 +76,11 @@ const stars = Math.round(recipe.rating ?? 0);
           {totalTime} min
         </span>
       )}
-      {recipe.rating && (
+      {(recipe.rating ?? 0) > 0 && (
         <span class="flex items-center gap-0.5 text-honey">
           {'★'.repeat(stars)}
           <span class="text-gray-300">{'★'.repeat(5 - stars)}</span>
-          <span class="text-muted ml-1">{recipe.rating.toFixed(1)}</span>
+          <span class="text-muted ml-1">{recipe.rating!.toFixed(1)}</span>
         </span>
       )}
     </div>
